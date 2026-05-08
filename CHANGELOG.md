@@ -1,3 +1,15 @@
+# Changelog
+
+## 2.1.0 - 2026-05-09
+
+### Added
+
+- Add `_darktower-deploy/` — shared ScrapeGraphAI service for Darktower, exposing SmartScraperGraph, SearchGraph, and MarkdownifyGraph via FastAPI REST (`/api/scrape`, `/api/search`, `/api/markdownify`) and an MCP SSE endpoint (`/mcp`) for Claude Code agents
+- Add JSON Schema structured output support: pass a `schema` dict in scrape/search requests to constrain LLM output to a guaranteed shape via Pydantic model generation at runtime
+- Add support for six LLM providers: Anthropic, OpenAI, Ollama (Darktower-local), Groq, Gemini, and Mistral — all configurable per-request with optional server-side fallback keys
+- Add `_darktower-deploy/deploy.sh` — rsync-based deployment script targeting Darktower over SSH, with dry-run, force, and per-target (`server`/`config`) modes
+- Add `_darktower-deploy/INTEGRATION.md` — comprehensive integration guide covering REST API reference, schema usage, code examples (Python, TypeScript, JavaScript, cURL), MCP wiring, best practices, usage patterns, and troubleshooting
+
 ## [2.0.0](https://github.com/ScrapeGraphAI/Scrapegraph-ai/compare/v1.76.0...v2.0.0) (2026-04-19)
 
 

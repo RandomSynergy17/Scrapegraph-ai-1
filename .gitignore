@@ -2,6 +2,9 @@
 .DS_Store?
 ._*
 
+# Darktower deployment secrets
+_darktower-deploy/.env.portainer
+
 # Byte-compiled / optimized / DLL files
 **/__pycache__/
 *.py[cod]

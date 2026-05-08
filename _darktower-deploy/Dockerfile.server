@@ -1,0 +1,31 @@
+FROM python:3.12-slim
+
+# Install to a fixed path so browsers are accessible regardless of which user runs the container
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# curl is needed for the Docker healthcheck
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python dependencies — install before copying app code for better layer caching
+RUN pip install --no-cache-dir \
+    "scrapegraphai" \
+    "langchain-anthropic" \
+    "fastapi" \
+    "uvicorn[standard]" \
+    "mcp[cli]"
+
+# Playwright + all Chromium system dependencies in one step
+RUN python -m playwright install --with-deps chromium
+
+# Application source
+COPY server/ /app/server/
+
+WORKDIR /app
+
+EXPOSE 3277
+
+CMD ["python", "-m", "uvicorn", "server.app:app", "--host", "0.0.0.0", "--port", "3277"]
