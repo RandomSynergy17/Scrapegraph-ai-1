@@ -1,14 +1,21 @@
-# Changelog
+## [2.1.1](https://github.com/ScrapeGraphAI/Scrapegraph-ai/compare/v2.1.0...v2.1.1) (2026-05-10)
 
-## 2.1.0 - 2026-05-09
 
-### Added
+### Bug Fixes
 
-- Add `_darktower-deploy/` — shared ScrapeGraphAI service for Darktower, exposing SmartScraperGraph, SearchGraph, and MarkdownifyGraph via FastAPI REST (`/api/scrape`, `/api/search`, `/api/markdownify`) and an MCP SSE endpoint (`/mcp`) for Claude Code agents
-- Add JSON Schema structured output support: pass a `schema` dict in scrape/search requests to constrain LLM output to a guaranteed shape via Pydantic model generation at runtime
-- Add support for six LLM providers: Anthropic, OpenAI, Ollama (Darktower-local), Groq, Gemini, and Mistral — all configurable per-request with optional server-side fallback keys
-- Add `_darktower-deploy/deploy.sh` — rsync-based deployment script targeting Darktower over SSH, with dry-run, force, and per-target (`server`/`config`) modes
-- Add `_darktower-deploy/INTEGRATION.md` — comprehensive integration guide covering REST API reference, schema usage, code examples (Python, TypeScript, JavaScript, cURL), MCP wiring, best practices, usage patterns, and troubleshooting
+* **ci:** clean stale dist artifacts before semantic-release publish ([fe5b818](https://github.com/ScrapeGraphAI/Scrapegraph-ai/commit/fe5b818cfe9f8d5d26d5043c55c0e66a6ed392de))
+
+## [2.1.0](https://github.com/ScrapeGraphAI/Scrapegraph-ai/compare/v2.0.0...v2.1.0) (2026-05-10)
+
+
+### Features
+
+* **models:** add OpenAI gpt-5.4 and gpt-5.5 family support ([c2c436d](https://github.com/ScrapeGraphAI/Scrapegraph-ai/commit/c2c436d25c2f4dcad539ea1ab6dcda48e98a31c6))
+
+
+### chore
+
+* **docs:** drop Sphinx/RTD setup, point doc links to docs.scrapegraphai.com ([efe336e](https://github.com/ScrapeGraphAI/Scrapegraph-ai/commit/efe336ec3f88da90dcc4923776e7da088278147b))
 
 ## [2.0.0](https://github.com/ScrapeGraphAI/Scrapegraph-ai/compare/v1.76.0...v2.0.0) (2026-04-19)
 
