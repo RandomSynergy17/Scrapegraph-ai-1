@@ -14,20 +14,23 @@ mcp_server = FastMCP("scrapegraph", stateless_http=True)
 async def smart_scrape(
     url: str,
     prompt: str,
-    llm_provider: str,
-    llm_model: str,
+    llm_provider: str = "",
+    llm_model: str = "",
     api_key: str = "",
     base_url: str = "",
 ) -> str:
-    """Scrape a URL and extract structured information based on a prompt."""
+    """Scrape a URL and extract structured information based on a prompt.
+
+    Leave llm_provider/llm_model empty to use the project default
+    (gemma4:12b via the DarkTower LiteLLM gateway)."""
     from .models import LLMConfig
 
     req = ScrapeRequest(
         url=url,
         prompt=prompt,
         llm=LLMConfig(
-            provider=llm_provider,
-            model=llm_model,
+            provider=llm_provider or None,
+            model=llm_model or None,
             api_key=api_key or None,
             base_url=base_url or None,
         ),
@@ -39,20 +42,23 @@ async def smart_scrape(
 @mcp_server.tool()
 async def search_web(
     prompt: str,
-    llm_provider: str,
-    llm_model: str,
+    llm_provider: str = "",
+    llm_model: str = "",
     max_results: int = 5,
     api_key: str = "",
     base_url: str = "",
 ) -> str:
-    """Search the web for information and summarise the results using an LLM."""
+    """Search the web for information and summarise the results using an LLM.
+
+    Leave llm_provider/llm_model empty to use the project default
+    (gemma4:12b via the DarkTower LiteLLM gateway)."""
     from .models import LLMConfig
 
     req = SearchRequest(
         prompt=prompt,
         llm=LLMConfig(
-            provider=llm_provider,
-            model=llm_model,
+            provider=llm_provider or None,
+            model=llm_model or None,
             api_key=api_key or None,
             base_url=base_url or None,
         ),

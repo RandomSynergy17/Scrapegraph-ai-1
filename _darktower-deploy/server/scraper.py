@@ -55,27 +55,57 @@ def _schema_to_pydantic(name: str, schema: dict) -> type | None:
     return create_model(name, **fields)
 
 
+def _openai_compatible_instance(model: str, base_url: str, api_key: str, model_tokens: int) -> dict:
+    """Build a ScrapeGraphAI llm config that targets an OpenAI-compatible endpoint
+    (e.g. the DarkTower LiteLLM gateway) via a pre-constructed client.
+
+    Passing the client as `model_instance` (rather than a "openai/<model>" string)
+    bypasses ScrapeGraphAI's token-table lookup, which has no entry for gateway model
+    names like "ocr"/gemma — letting us declare the true context window instead.
+    """
+    from langchain_openai import ChatOpenAI
+
+    instance = ChatOpenAI(model=model, base_url=base_url, api_key=api_key, temperature=0)
+    return {"model_instance": instance, "model_tokens": model_tokens}
+
+
 def build_graph_config(llm: LLMConfig, headless: bool = True) -> dict:
+    # Resolve provider/model from the request, falling back to the project's env
+    # defaults. With nothing set, this defaults to gemma4:12b via the LiteLLM gateway
+    # (provider=openai, model=ocr, OPENAI_BASE_URL pointing at the gateway).
+    provider = (llm.provider or os.getenv("LLM_PROVIDER") or "openai").lower()
+    model = llm.model or os.getenv("LLM_MODEL") or "ocr"
+    model_tokens = int(os.getenv("LLM_MODEL_TOKENS", "128000"))
     llm_cfg: dict[str, Any]
 
-    if llm.provider == "ollama":
+    if provider == "ollama":
         base = llm.base_url or os.getenv("DEFAULT_OLLAMA_BASE_URL") or ""
-        llm_cfg = {"model": f"ollama/{llm.model}"}
+        llm_cfg = {"model": f"ollama/{model}"}
         if base:
             llm_cfg["base_url"] = base
-    elif llm.provider == "openai":
+    elif provider == "openai":
         key = llm.api_key or os.getenv("OPENAI_API_KEY") or ""
-        llm_cfg = {"model": f"openai/{llm.model}", "openai_api_key": key}
-    elif llm.provider == "anthropic":
+        base = llm.base_url or os.getenv("OPENAI_BASE_URL") or ""
+        if base:
+            # Custom OpenAI-compatible endpoint (the DarkTower LiteLLM gateway).
+            # Build the client ourselves and pass it as `model_instance` so
+            # ScrapeGraphAI skips its built-in token-table lookup (which has no
+            # entry for "ocr"/gemma) and we can declare the real 128K context.
+            llm_cfg = _openai_compatible_instance(model, base, key, model_tokens)
+        else:
+            llm_cfg = {"model": f"openai/{model}", "openai_api_key": key}
+    elif provider == "anthropic":
         key = llm.api_key or os.getenv("ANTHROPIC_API_KEY") or ""
-        llm_cfg = {"model": f"anthropic/{llm.model}", "anthropic_api_key": key}
+        llm_cfg = {"model": f"anthropic/{model}", "anthropic_api_key": key}
     else:
         # Generic passthrough for any provider langchain supports (e.g. "groq", "mistral")
-        llm_cfg = {"model": f"{llm.provider}/{llm.model}"}
-        if llm.api_key:
-            llm_cfg["api_key"] = llm.api_key
-        if llm.base_url:
-            llm_cfg["base_url"] = llm.base_url
+        base = llm.base_url or os.getenv("OPENAI_BASE_URL") or ""
+        if base:
+            llm_cfg = _openai_compatible_instance(model, base, llm.api_key or "", model_tokens)
+        else:
+            llm_cfg = {"model": f"{provider}/{model}"}
+            if llm.api_key:
+                llm_cfg["api_key"] = llm.api_key
 
     return {
         "llm": llm_cfg,

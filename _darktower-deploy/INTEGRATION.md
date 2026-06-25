@@ -50,10 +50,17 @@ If you need any of these, open a request or extend the server source in `_darkto
 
 ## LLM Configuration
 
-All scrape/search requests include an `llm` object. Keys travel in the request body — nothing
-is stored server-side except the fallback keys configured in Portainer.
+The `llm` object is **optional**. Omit it (or any of its fields) and the request uses the
+**project default — gemma4:12b via the DarkTower LiteLLM gateway** (provider `openai`,
+model alias `ocr`, `think:false`, 128K context). This keeps data on-box and free.
+Provide an `llm` object to override per-request. Keys travel in the request body — nothing
+is stored server-side except the fallback keys/gateway key configured in Portainer.
 
 ```json
+// Default (omit llm entirely) → gemma4:12b via LiteLLM:
+{ "url": "https://example.com", "prompt": "..." }
+
+// Or override per-request:
 {
   "provider": "anthropic",
   "model": "claude-haiku-4-5-20251001",
@@ -61,13 +68,18 @@ is stored server-side except the fallback keys configured in Portainer.
 }
 ```
 
+The default is controlled by env on the Portainer stack (`LLM_PROVIDER`, `LLM_MODEL`,
+`OPENAI_BASE_URL`, `OPENAI_API_KEY`) — swapping the default model is an `.env` change, or a
+central LiteLLM alias swap with no project edits.
+
 ### Supported Providers
 
 | `provider` | `model` examples | Notes |
 |---|---|---|
+| _(omitted)_ | _(omitted)_ | **Default** — gemma4:12b via LiteLLM (`openai`/`ocr`). Free, on-box. |
+| `openai` | `ocr`, `chat-smart` (gateway aliases), `gpt-4o-mini`, `gpt-4o` | Routes to LiteLLM when `OPENAI_BASE_URL` is set; pass `base_url` to override |
 | `anthropic` | `claude-haiku-4-5-20251001`, `claude-sonnet-4-6`, `claude-opus-4-7` | Omit `api_key` to use server fallback |
-| `openai` | `gpt-4o-mini`, `gpt-4o`, `o1-mini` | Omit `api_key` to use server fallback |
-| `ollama` | `llama3.2:3b-instruct-q5_K_M`, `qwen2.5:14b`, `mistral` | Free — Darktower's Ollama used by default |
+| `ollama` | `llama3.2:3b-instruct-q5_K_M`, `qwen2.5:14b`, `mistral` | Free — Darktower's Ollama, direct (bypasses the gateway) |
 | `groq` | `llama3-8b-8192`, `mixtral-8x7b-32768` | Pass your Groq key in `api_key` |
 | `gemini` | `gemini/gemini-pro`, `gemini/gemini-flash` | Pass your Google key in `api_key` |
 | `mistral` | `mistral/mistral-small` | Pass your Mistral key in `api_key` |
@@ -87,7 +99,8 @@ ssh randolph@darktower.lynx-alpha.ts.net "docker exec ollama ollama list"
 
 | Model | Cost | Speed | Best for |
 |---|---|---|---|
-| `anthropic/claude-haiku-4-5-20251001` | Low | Fast | Default choice for most scraping |
+| `ocr` (gemma4:12b via LiteLLM) | Free | ~48 tok/s | **Default** — on-box extraction, `think:false`, 128K context |
+| `anthropic/claude-haiku-4-5-20251001` | Low | Fast | Cloud fallback for tricky extraction |
 | `anthropic/claude-sonnet-4-6` | Medium | Medium | Complex extraction, multi-step reasoning |
 | `openai/gpt-4o-mini` | Low | Fast | OpenAI alternative to Haiku |
 | `openai/gpt-4o` | High | Medium | When cheaper models miss structured output |
@@ -117,16 +130,15 @@ Scrapes a single URL with Playwright and extracts information matching your prom
 |---|---|---|---|---|
 | `url` | string | yes | — | Full URL including scheme |
 | `prompt` | string | yes | — | Natural language extraction instruction |
-| `llm` | LLMConfig | yes | — | See LLM Configuration |
+| `llm` | LLMConfig | no | gemma4:12b via LiteLLM | Omit to use the project default; see LLM Configuration |
 | `headless` | bool | no | `true` | Browser visibility — always `true` server-side |
 | `schema` | object | no | `null` | JSON Schema for guaranteed output structure (see below) |
 
-**Minimal request**
+**Minimal request** (uses the default gemma4:12b via LiteLLM — no `llm` needed)
 ```json
 {
   "url": "https://example.com",
-  "prompt": "What is the page title and main content summary?",
-  "llm": {"provider": "anthropic", "model": "claude-haiku-4-5-20251001"}
+  "prompt": "What is the page title and main content summary?"
 }
 ```
 
@@ -184,7 +196,7 @@ Searches the web, fetches the top N result pages, and synthesises an answer with
 | Field | Type | Required | Default | Notes |
 |---|---|---|---|---|
 | `prompt` | string | yes | — | Search query or question to answer |
-| `llm` | LLMConfig | yes | — | |
+| `llm` | LLMConfig | no | gemma4:12b via LiteLLM | Omit to use the project default; see LLM Configuration |
 | `max_results` | int | no | `5` | Number of pages to fetch and synthesise |
 | `schema` | object | no | `null` | JSON Schema for structured output |
 
