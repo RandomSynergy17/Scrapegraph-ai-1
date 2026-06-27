@@ -3,11 +3,21 @@ import contextlib
 
 from fastapi import FastAPI
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 
 from . import scraper
 from .models import MarkdownifyRequest, ScrapeRequest, ScrapeResponse, SearchRequest
 
-mcp_server = FastMCP("scrapegraph", stateless_http=True)
+# This is a server-side service reached over NPM (scrapegraph.randomsynergy.xyz) and
+# Tailscale, not a localhost MCP server a malicious web page could DNS-rebind into.
+# The MCP SDK otherwise enforces a localhost-only Host allowlist and returns
+# "Invalid Host header" (421) to any remote caller — disable that so /mcp is reachable
+# remotely, matching the (already open) REST API on the same service.
+mcp_server = FastMCP(
+    "scrapegraph",
+    stateless_http=True,
+    transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False),
+)
 
 
 @mcp_server.tool()
